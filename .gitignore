@@ -1,0 +1,10 @@
+# Private key files
+.env
+.env.local
+.env.testnet
+*.key
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
