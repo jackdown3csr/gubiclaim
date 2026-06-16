@@ -39,14 +39,6 @@ def ensure_dependencies():
 ensure_dependencies()
 
 import getpass  # noqa: E402
-import os  # noqa: E402
-
-try:
-    from dotenv import load_dotenv
-    load_dotenv(".env.local")
-    load_dotenv(".env")
-except ImportError:
-    pass
 
 from eth_account import Account  # noqa: E402
 from web3 import Web3  # noqa: E402
@@ -194,59 +186,41 @@ def main() -> None:
         return
 
     # STEP 4: private key
-    _env_key = os.getenv("PRIVATE_KEY", "").strip()
-    if _env_key:
-        if not _env_key.startswith("0x"):
-            _env_key = f"0x{_env_key}"
+    print()
+    print("STEP 4: Sign the transactions with your private key")
+    print()
+    print("  Your private key is required to authorize the transaction.")
+    print("  It is a 64-character hex string, usually starting with 0x.")
+    print("  You can find it in MetaMask: Account Details -> Export Private Key")
+    print()
+    print("  IMPORTANT: Your key is never stored, logged, or sent anywhere.")
+    print("  It is used only to sign transactions locally on your computer.")
+    print("  When you type it, the characters will NOT be visible (hidden input).")
+    print()
+    while True:
+        private_key = getpass.getpass("  Private key (hidden): ").strip()
+        if not private_key:
+            print("  ! No key entered. Try again.")
+            continue
+        if not private_key.startswith("0x"):
+            private_key = f"0x{private_key}"
         try:
-            _signer = Account.from_key(_env_key)
-            if _signer.address.lower() == address.lower():
-                private_key = _env_key
-                print()
-                print("STEP 4: Using private key from environment.")
-            else:
-                private_key = None
+            signer = Account.from_key(private_key)
         except Exception:
-            private_key = None
-    else:
-        private_key = None
-
-    if not private_key:
-        print()
-        print("STEP 4: Sign the transactions with your private key")
-        print()
-        print("  Your private key is required to authorize the transaction.")
-        print("  It is a 64-character hex string, usually starting with 0x.")
-        print("  You can find it in MetaMask: Account Details -> Export Private Key")
-        print()
-        print("  IMPORTANT: Your key is never stored, logged, or sent anywhere.")
-        print("  It is used only to sign transactions locally on your computer.")
-        print("  When you type it, the characters will NOT be visible (hidden input).")
-        print()
-        while True:
-            private_key = getpass.getpass("  Private key (hidden): ").strip()
-            if not private_key:
-                print("  ! No key entered. Try again.")
-                continue
-            if not private_key.startswith("0x"):
-                private_key = f"0x{private_key}"
-            try:
-                signer = Account.from_key(private_key)
-            except Exception:
-                print("  ! Invalid private key format. Make sure you copied the full key.")
-                continue
-            if signer.address.lower() != address.lower():
-                print(f"  ! This key belongs to a different address: {signer.address}")
-                print(f"  ! Expected address:                        {address}")
-                print("  ! Make sure you are using the correct key for the wallet above.")
-                retry = input("  Try a different key? (y/n): ").strip().lower()
-                if retry != "y":
-                    print("  Cancelled.")
-                    input("\nPress Enter to exit...")
-                    sys.exit(0)
-                continue
-            print("  Key verified — address matches.")
-            break
+            print("  ! Invalid private key format. Make sure you copied the full key.")
+            continue
+        if signer.address.lower() != address.lower():
+            print(f"  ! This key belongs to a different address: {signer.address}")
+            print(f"  ! Expected address:                        {address}")
+            print("  ! Make sure you are using the correct key for the wallet above.")
+            retry = input("  Try a different key? (y/n): ").strip().lower()
+            if retry != "y":
+                print("  Cancelled.")
+                input("\nPress Enter to exit...")
+                sys.exit(0)
+            continue
+        print("  Key verified — address matches.")
+        break
 
     gas_price = w3.eth.gas_price
     vault_c = w3.eth.contract(address=VAULT, abi=VAULT_ABI)
